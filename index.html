@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Me empresta R$240,00 aí?</title>
+  <style>
+    :root{
+      --bg: #0f1724;
+      --card: #0b1220;
+      --accent: #6ee7b7;
+      --text: #e6eef8;
+      --muted: #97a4b5;
+      --shadow: 0 10px 25px rgba(2,6,23,0.6);
+      --glass: rgba(255,255,255,0.03);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(110,231,183,0.06), transparent 8%),
+        radial-gradient(900px 400px at 90% 90%, rgba(99,102,241,0.04), transparent 10%),
+        var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    .wrap{
+      min-height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+      box-sizing:border-box;
+    }
+
+    .card{
+      width:100%;
+      max-width:420px;
+      background:linear-gradient(180deg,var(--card), rgba(11,18,32,0.85));
+      border-radius:14px;
+      padding:28px;
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(6px);
+      border:1px solid rgba(255,255,255,0.03);
+      text-align:center;
+    }
+
+    h1{
+      margin:0 0 10px 0;
+      font-size:20px;
+      letter-spacing:0.2px;
+    }
+
+    p.lead{
+      margin:0 0 22px 0;
+      color:var(--muted);
+      font-size:15px;
+    }
+
+    .amount{
+      display:inline-block;
+      background:var(--glass);
+      padding:8px 12px;
+      border-radius:10px;
+      margin-bottom:18px;
+      color:var(--accent);
+      font-weight:600;
+      font-size:18px;
+      border:1px solid rgba(110,231,183,0.08);
+    }
+
+    .buttons{
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      align-items:center;
+      margin-top:6px;
+      flex-wrap:wrap;
+    }
+
+    button.btn{
+      appearance:none;
+      border:0;
+      padding:10px 18px;
+      border-radius:10px;
+      font-size:15px;
+      cursor:pointer;
+      min-width:96px;
+      transition:transform .12s ease, box-shadow .12s ease;
+      box-shadow: 0 6px 18px rgba(2,6,23,0.35);
+    }
+
+    button.btn:active{ transform: translateY(1px) scale(.995); }
+
+    .btn-sim{
+      background: linear-gradient(180deg,#10b981,#059669);
+      color:white;
+    }
+
+    .btn-nao{
+      background:transparent;
+      color:var(--text);
+      border:1px solid rgba(255,255,255,0.06);
+    }
+
+    /* disappear animation for "Não" */
+    .btn-nao.disappearing{
+      transition: opacity 450ms cubic-bezier(.22,.9,.3,1), transform 450ms cubic-bezier(.22,.9,.3,1);
+      opacity:0;
+      transform: translateY(-8px) scale(.92);
+      pointer-events: none;
+    }
+
+    /* small message area */
+    .msg{
+      margin-top:18px;
+      font-size:14px;
+      color:var(--muted);
+      min-height:22px;
+    }
+
+    /* success micro modal for "Sim" */
+    .toast{
+      margin-top:14px;
+      display:inline-block;
+      background:rgba(16,185,129,0.12);
+      color:var(--accent);
+      padding:8px 12px;
+      border-radius:9px;
+      border:1px solid rgba(110,231,183,0.12);
+      font-weight:600;
+      transform: translateY(6px);
+      opacity:0;
+      transition: opacity .28s ease, transform .28s ease;
+      pointer-events:none;
+    }
+    .toast.show{
+      opacity:1;
+      transform: translateY(0);
+      pointer-events:auto;
+    }
+
+    /* responsive tweaks */
+    @media (max-width:420px){
+      .card{ padding:20px; border-radius:12px; }
+      button.btn{ min-width:44%; padding:10px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <main class="card" role="main" aria-labelledby="title">
+      <h1 id="title">Me empresta R$240,00 aí?</h1>
+      <div class="amount" aria-hidden="true">R$ 240,00</div>
+      <p class="lead">PFV :)</p>
+
+      <div class="buttons" role="group" aria-label="Escolha">
+        <button id="btnSim" class="btn btn-sim" aria-pressed="false" aria-label="Sim, posso emprestar">Sim</button>
+        <button id="btnNao" class="btn btn-nao" aria-pressed="false" aria-label="Não, não posso emprestar">Não</button>
+      </div>
+
+      <div class="msg" id="msg" aria-live="polite"></div>
+      <div class="toast" id="toast" role="status" aria-live="assertive">Valeu! Vou lembrar :)</div>
+    </main>
+  </div>
+
+  <script>
+    (function(){
+      const btnSim = document.getElementById('btnSim');
+      const btnNao = document.getElementById('btnNao');
+      const msg = document.getElementById('msg');
+      const toast = document.getElementById('toast');
+
+      // Função para mostrar mensagem temporária
+      function showToast(text){
+        toast.textContent = text;
+        toast.classList.add('show');
+        setTimeout(()=> toast.classList.remove('show'), 2200);
+      }
+
+      // Clique em "Sim"
+      btnSim.addEventListener('click', (e) => {
+        btnSim.setAttribute('aria-pressed','true');
+        msg.textContent = " Muito obrigado 😊";
+        showToast("manda o pix!");
+      });
+
+      // Clique em "Não" — faz sumir com efeito e remove do DOM
+      btnNao.addEventListener('click', (e) => {
+        // evita múltiplos cliques
+        if (btnNao.classList.contains('disappearing')) return;
+
+        btnNao.classList.add('disappearing');
+        btnNao.setAttribute('aria-pressed','true');
+        msg.textContent = "vai me emprestar sim";
+        // após a animação, remover do DOM (para não ficar focável)
+        btnNao.addEventListener('transitionend', function handler(ev){
+          // garantir que seja a transição de opacity/transform
+          if (ev.propertyName === 'opacity' || ev.propertyName === 'transform') {
+            btnNao.removeEventListener('transitionend', handler);
+            try { btnNao.parentNode && btnNao.parentNode.removeChild(btnNao); } catch(e){}
+          }
+        });
+      });
+
+      // Suporte teclado: Enter ou Space ativam os botões quando focados
+      document.addEventListener('keydown', (ev) => {
+        const active = document.activeElement;
+        if (!active) return;
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          if (active === btnSim) { btnSim.click(); ev.preventDefault(); }
+          if (active === btnNao) { btnNao.click(); ev.preventDefault(); }
+        }
+      });
+
+      // Foco inicial amigável
+      btnSim.focus();
+    })();
+  </script>
+</body>
+</html>
